@@ -137,6 +137,6 @@ The programs preserve the source calculations where draft descriptions differ:
 - The supplied RGDP mean sheet includes a 2025Q4 survey, allowing evaluation through 2025Q3, although the nominal paper labels end at 2025Q2. Other mean sheets end with the 2025Q3 survey. The mean program checks these snapshot dates because its evaluation rules use row indices.
 - Evaluation samples can begin later than nominal period labels because both current and lagged signals must be available. Sample sizes can differ across methods and horizons.
 
-All **2,376 numeric entries** in the six mean-forecast draft tables agree with the source-program results. The CPI `previous_error`, `h=1`, recursive column reports **0.98**, **0.98**, and **0.88** for 1981Q3–2025Q2, 2000Q1–2025Q2, and 2022Q1–2025Q2, respectively; the latest-period relative RMSFE corresponds to a **12% improvement** over the mean forecast.
+All **2,376 numeric entries** in the six mean-forecast draft tables agree with the source-program results. 
 
-The UNEMP one-step benchmark's full-period excluding-COVID row bolds the fixed factor **0.5**, selected at full precision. The values at factors 0.4 and 0.5 both round to 0.86. All fixed-factor bold selections in the six draft tables agree with the generated LaTeX tables, which select minima before rounding.
+All fixed-factor bold selections in the six draft tables agree with the generated LaTeX tables, which select minima before rounding.
