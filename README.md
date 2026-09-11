@@ -127,7 +127,7 @@ Record the corresponding `MSE` rows before rerunning, since each run clears the 
 Preparation checks in MATLAB R2026a gave the following results:
 
 - **Simulation:** the calculation statements were unchanged from v04. A controlled serial comparison using a 3×3 grid, 200 replications, and all three break scenarios matched all 17 compared outputs exactly. The full parallel grid was not rerun for this check.
-- **Mean forecasts:** all 204 field comparisons against the three source programs matched exactly across four indicators and four horizons. The `lagged_error` name replaces the development label `available_error` without changing the calculation.
+- **Mean forecasts:** all 204 field comparisons against the three source programs matched exactly across four indicators and four horizons. 
 - **Optimal combinations:** all 33 compared outputs matched v04 exactly for the complete default UNEMP run. Standalone workbook discovery was also verified.
 
 The programs preserve the source calculations where draft descriptions differ:
