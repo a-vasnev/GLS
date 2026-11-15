@@ -13,7 +13,7 @@ MATLAB replication code accompanying Liu and Vasnev (2026), covering the motivat
 
 The workbooks contain UNEMP (unemployment), RGDP (real GDP), INDPROD (industrial production), and CPI data. The replication programs use the supplied workbook values; the mean-forecast program uses RGDP and INDPROD levels. The individual workbook contains forecaster IDs and individual reports.
 
-[USSPF_mean_fcst_v01.m](USSPF_mean_fcst_v01.m) and [USSPF_opt_fcst_v03.m](USSPF_opt_fcst_v03.m) are earlier versions retained for reference. Use the v05 programs for the revised empirical applications; they include their own helper functions and do not call the earlier scripts.
+
 
 ## Requirements and setup
 
