@@ -36,12 +36,12 @@
 % REPLICATION CONVENTIONS retained from the sources:
 % - Fixed factors 0:0.1:1; gamma=0 is the method's matched-sample baseline.
 % - Recursive warm-up: gamma=0.5 through row 50; CPI uses 0.3 through row 100.
-% - fminunc is retained with its original options and no coefficient bounds.
-%   The draft mentions a (-1,1) restriction, but the source scripts do not
-%   impose it. Adding bounds would change the replication calculation.
-% - COVID rows 206:213 are 2020Q1--2021Q4 in the supplied workbook. They are
-%   excluded from starred evaluations and from both sides of training pairs.
-%   Some draft captions instead say 2020Q1--2022Q4; we retain the code's dates.
+% - The recursive correction coefficient is fitted with fminunc and clipped
+%   strictly inside (-1,1) before it is used to correct the forecast.
+% - COVID Rows 206:213 correspond to 2020Q1--2021Q4. These quarters are excluded
+%   from evaluation in the starred rows. Recursive estimation drops a
+%   training pair if either the forecast error or the lagged correction
+%   signal belongs to one of these quarters.
 % - Paper period labels are nominal: finite-pair filtering can move the first
 %   evaluated quarter later, and each method/horizon has its own sample.
 %   The extra RGDP survey also lets the original scripts evaluate 2025Q3,
@@ -352,7 +352,8 @@ for h = forecast_horizons
             regressor = signal(lag_idx,h);
             fun = @(x)sum((dependent - x * regressor).^2);
             [rho_new,~] = fminunc(fun,rho_old,optim_options);
-            rho_old = rho_new;
+            %rho_old = rho_new;
+            rho_old = max(-(1-eps(1)), min(rho_new, 1-eps(1))); % stabilizing restriction; it's not binding in the current version
         end
 
         TTable.rho_opt(target_idx,h) = rho_old;

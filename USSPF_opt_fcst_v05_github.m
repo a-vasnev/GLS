@@ -9,9 +9,9 @@
 % script for a standalone GitHub copy; the original ../Data/US_SPF layout is
 % also supported. Run the complete script. It clears the workspace and closes
 % existing figures, then displays diagnostic plots and the MSE_print table.
-% PDF export lines remain commented out, as in v04. If enabled, they save
-% beside the script. Some figures contain multiple panels; an export of a
-% whole figure is not automatically a separate PDF for each paper subfigure.
+% Plot-only mode saves the selected indicator beside the script. For the
+% default analysis, the README gives export commands for the paper's
+% individual autocorrelation panels and the additional benchmark figure.
 %
 % DEFAULT ILLUSTRATION (Section 3.2)
 % UNEMP, surveys in 2000--2019, forecasters with at least 70 survey rows,
@@ -19,8 +19,8 @@
 % and recursive fits starting at retained observation 25. The original script
 % has only been checked for the optimal-weight UNEMP illustration. Other
 % indicators can be selected but their regression results need separate checks.
-% my_period=1 selects 2000--2008 with a 30-row threshold. my_period=3 creates
-% the full-period data plot and deliberately stops with the inherited error.
+% my_period=1 selects 2000--2008 with a 30-row threshold. my_period=3 exports
+% the full-period data plot for my_variable and returns before estimation.
 %
 % METHODS COMPUTED IN ONE RUN
 % MEAN: equal-weight average of available reports, with fixed and recursively
@@ -49,6 +49,8 @@
 %   rMSFE divides by the FIRST MSE row (ERR_MEAN in the default illustration).
 %   These are squared-error ratios, not relative root mean squared errors.
 % w_hat_GLS_set, rho_opt_set, rho_opt_GLS_set: recursive parameter histories.
+% mean_acf_axes / regression_acf_axes: axes for the Figure 5 panel exports.
+% gcf_new_methods: the Figure 6 plot of the additional benchmark ACFs.
 % beta_hat_CR4_set / beta_hat_CR5_set: dynamic benchmark coefficient histories.
 % X_corr_CLEM, delta0_CLEM_set / delta1_CLEM_set: corrected individual reports
 %   and their efficiency-regression coefficient histories.
@@ -114,7 +116,7 @@ elseif my_period == 2
     my_data = my_data(my_data.YEAR >= 2000 & my_data.YEAR <= 2019, :);
     T_threshold = 70; % 20*4=80, 12.5% missing allowed
 elseif my_period == 3
-    % all period do create Figure 2 in the draft
+    % Use the full available period for Figure 3.
     my_data = my_data(my_data.YEAR >= 1969 & my_data.YEAR <= 2026, :);
     T_threshold = 0; 
 else 
@@ -303,10 +305,10 @@ grid on;
 hold off;
 file_out = fullfile(output_dir, 'fig-' + my_variable + '.pdf');
 
-% Preserve the original plot-only mode, including its deliberate early stop.
 if my_period == 3
-    %exportgraphics(gcf,file_out,'ContentType','vector');
-    error("Figure is done, the rest is not implemented for this period")
+    exportgraphics(gcf,file_out,'ContentType','vector');
+    fprintf('Saved %s\n',file_out);
+    return
 end
 
 
@@ -397,10 +399,10 @@ my_pdata_fcst_errors_TT.ERR_MEAN_CORR_HO = err_mean_corr_HO;
 
 scrsz = get(0,'ScreenSize'); 
 gcf=figure('PaperPositionMode','auto','Position',[scrsz(3)/20 scrsz(4)/2 scrsz(3)/(3) scrsz(4)/(3)],'PaperOrientation','landscape'); hold on; % position [left bottom width height]
-subplot(1,2,1); 
+mean_acf_axes(1) = subplot(1,2,1);
 autocorr(my_pdata_fcst_errors_TT.ERR_MEAN, 'NumLags', 12);   % 12 lags (3 years of quarters)
 title('Autocorrelation of ERR\_MEAN');
-subplot(1,2,2);
+mean_acf_axes(2) = subplot(1,2,2);
 autocorr(my_pdata_fcst_errors_TT.ERR_MEAN_CORR_F, 'NumLags', 12);   % 12 lags (3 years of quarters)
 title('Autocorrelation of ERR\_MEAN\_CORR');
 %file_out = fullfile(output_dir, 'fig-autocorr-mean.pdf');
@@ -659,16 +661,16 @@ my_pdata_fcst_errors_TT.ERR_CLEM_CTC_MEAN = my_pdata_fcst_aligned_TT.ACTUAL - my
 % check autocorrelation from regressions
 scrsz = get(0,'ScreenSize'); 
 gcf=figure('PaperPositionMode','auto','Position',[scrsz(3)/20 scrsz(4)/2 scrsz(3)/(3) scrsz(4)/(3)],'PaperOrientation','landscape'); hold on; % position [left bottom width height]
-subplot(2,2,1);
+regression_acf_axes(1) = subplot(2,2,1);
 autocorr(my_pdata_fcst_errors_TT.ERR_REGR_IN, 'NumLags', 12);   % 12 lags (3 years of quarters)
 title('Autocorrelation of ERR\_REGR\_IN');
-subplot(2,2,2);
+regression_acf_axes(2) = subplot(2,2,2);
 autocorr(my_pdata_fcst_errors_TT.ERR_REGR_OUT, 'NumLags', 12);   % 12 lags (3 years of quarters)
 title('Autocorrelation of ERR\_REGR\_OUT');
-subplot(2,2,3);
+regression_acf_axes(3) = subplot(2,2,3);
 autocorr(my_pdata_fcst_errors_TT.ERR_REGR_OUT_CORR_HO, 'NumLags', 12);   % 12 lags (3 years of quarters)
 title('Autocorrelation of ERR\_REGR\_OUT\_CORR');
-subplot(2,2,4);
+regression_acf_axes(4) = subplot(2,2,4);
 autocorr(my_pdata_fcst_errors_TT.ERR_REGR_GLS, 'NumLags', 12);   % 12 lags (3 years of quarters)
 title('Autocorrelation of ERR\_REGR\_GLS');
 %file_out = fullfile(output_dir, 'fig-autocorr-regr.pdf');
@@ -849,7 +851,32 @@ elseif dataLines(end,2) >= Inf
 end
 
 %% Set up the Import Options and import the data
-opts = spreadsheetImportOptions("NumVariables", 14);
+% Specify column names and types
+if sheetName == "UNEMP"
+    opts = spreadsheetImportOptions("NumVariables", 14);
+    opts.VariableNames = ["YEAR", "QUARTER", "ID", "INDUSTRY", "UNEMP1", "UNEMP2", "UNEMP3", "UNEMP4", "UNEMP5", "UNEMP6", "UNEMPA", "UNEMPB", "UNEMPC", "UNEMPD"];
+    opts.VariableTypes = ["double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double"];
+    % Specify variable properties
+    opts = setvaropts(opts, ["UNEMPC", "UNEMPD"], "EmptyFieldRule", "auto");
+elseif sheetName == "CPI"
+    opts = spreadsheetImportOptions("NumVariables", 13);
+    opts.VariableNames = ["YEAR", "QUARTER", "ID", "INDUSTRY", "CPI1", "CPI2", "CPI3", "CPI4", "CPI5", "CPI6", "CPIA", "CPIB", "CPIC"];
+    opts.VariableTypes = ["double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double"];
+    % Specify variable properties
+    opts = setvaropts(opts, ["CPIC"], "EmptyFieldRule", "auto");
+elseif sheetName == "INDPROD"
+    opts = spreadsheetImportOptions("NumVariables", 12);
+    opts.VariableNames = ["YEAR", "QUARTER", "ID", "INDUSTRY", "INDPROD1", "INDPROD2", "INDPROD3", "INDPROD4", "INDPROD5", "INDPROD6", "INDPRODA", "INDPRODB"];
+    opts.VariableTypes = ["double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double"];
+elseif sheetName == "RGDP"
+    opts = spreadsheetImportOptions("NumVariables", 14);
+    opts.VariableNames = ["YEAR", "QUARTER", "ID", "INDUSTRY", "RGDP1", "RGDP2", "RGDP3", "RGDP4", "RGDP5", "RGDP6", "RGDPA", "RGDPB", "RGDPC", "RGDPD"];
+    opts.VariableTypes = ["double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double"];
+    % Specify variable properties
+    opts = setvaropts(opts, ["RGDPC", "RGDPD"], "EmptyFieldRule", "auto");
+else
+    error("this variable not implemented yet")
+end
 
 % Specify sheet and range
 opts.Sheet = sheetName;
@@ -857,29 +884,6 @@ if lastRowOfDataIdx == 1
     opts.DataRange = "A" + dataLines(1, 1);
 else
     opts.DataRange = "A" + dataLines(1, 1) + ":L" + dataLines(1, 2);
-end
-
-% Specify column names and types
-if sheetName == "UNEMP"
-    opts.VariableNames = ["YEAR", "QUARTER", "ID", "INDUSTRY", "UNEMP1", "UNEMP2", "UNEMP3", "UNEMP4", "UNEMP5", "UNEMP6", "UNEMPA", "UNEMPB", "UNEMPC", "UNEMPD"];
-    opts.VariableTypes = ["double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double"];
-    % Specify variable properties
-    opts = setvaropts(opts, ["UNEMPC", "UNEMPD"], "EmptyFieldRule", "auto");
-elseif sheetName == "CPI"
-    opts.VariableNames = ["YEAR", "QUARTER", "ID", "INDUSTRY", "CPI1", "CPI2", "CPI3", "CPI4", "CPI5", "CPI6", "CPIA", "CPIB", "CPIC"];
-    opts.VariableTypes = ["double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double"];
-    % Specify variable properties
-    opts = setvaropts(opts, ["CPIC"], "EmptyFieldRule", "auto");
-elseif sheetName == "INDPROD"
-    opts.VariableNames = ["YEAR", "QUARTER", "ID", "INDUSTRY", "INDPROD1", "INDPROD2", "INDPROD3", "INDPROD4", "INDPROD5", "INDPROD6", "INDPRODA", "INDPRODB"];
-    opts.VariableTypes = ["double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double"];
-elseif sheetName == "RGDP"
-    opts.VariableNames = ["YEAR", "QUARTER", "ID", "INDUSTRY", "RGDP1", "RGDP2", "RGDP3", "RGDP4", "RGDP5", "RGDP6", "RGDPA", "RGDPB", "RGDPC", "RGDPD"];
-    opts.VariableTypes = ["double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double", "double"];
-    % Specify variable properties
-    opts = setvaropts(opts, ["RGDPC", "RGDPD"], "EmptyFieldRule", "auto");
-else
-    error("this variable not implemented yet")
 end
 
 % Import the data
